@@ -4,6 +4,7 @@ from typing import List
 import re
 import random
 import math
+import copy 
 
 def extract_file_lines(filePath: str) -> List[str]:
     file1 = open(filePath, 'r') 
@@ -16,8 +17,8 @@ def parse_file_line_to_point(line: str):
     line = line.replace('\n', '')
     coords = line.split(' ')
 
-    x = coords[0]
-    y = coords[1]
+    x = int(coords[0])
+    y = int(coords[1])
 
     return (x, y)
 
@@ -78,10 +79,15 @@ class Cluster:
     def empty_cluster(self):
         self.points = []
 
+    def get_points_first_coord(self):
+        return [point[0] for point in self.points]
+
+    def get_points_second_coord(self):
+        return [point[1] for point in self.points]
 
 # TODO try to random init points but not from given points
 def random_init_clusters(points: (float, float), numCentroids: int) -> List[Cluster]:
-    centroids = random.sample(points, numCentroids)
+    centroids = random.sample(points, numCentroids) # TODO does this get different points
     clusters = []
 
     for centroid in centroids:
@@ -96,7 +102,7 @@ def assign_point_to_nearest_cluster(point, clusters: List[Cluster]):
     distances = [dist(point, cluster.get_centroid()) for cluster in clusters]
     clusterIndex = distances.index(min(distances))
 
-    clusters[clusterIndex].add_point(clusterIndex)
+    clusters[clusterIndex].add_point(point)
 
 # step 1 of kMeans in cycle
 def assign_points_to_nearest_clusters(points, clusters: List[Cluster]):
@@ -113,32 +119,57 @@ def empty_clusters(clusters: List[Cluster]):
     for cluster in clusters:
         cluster.empty_cluster()
 
+def get_centroids(clusters: List[Cluster]):
+    centroids = [cluster.get_centroid() for cluster in clusters]
+    return centroids
 
-# def kMeans(k, filePathWithData) -> List[Cluster]:
-#     points = extract_points_given_file(filePathWithData)
-#     clusters = random_init_clusters(points, k)
+def kMeans(k, filePathWithData) -> List[Cluster]:
 
-#     while centroid_differs(lastCentroids, currentCentroids):
-#         update_centroids(clusters)
-#         empty_clusters(clusters)
-#         assign_points_to_nearest_clusters(points, clusters)
+    def centroid_differs(lastCentroids, currentCentroids):
+        return not (lastCentroids == currentCentroids)
+
+    points = extract_points_given_file(filePathWithData)
+    clusters = random_init_clusters(points, k)
+    update_centroids(clusters)
+
+    lastCentroids = None
+    currentCentroids = get_centroids(clusters)
+
+    while centroid_differs(lastCentroids, currentCentroids):
+        lastCentroids = copy.deepcopy(currentCentroids)
+        empty_clusters(clusters)
+        assign_points_to_nearest_clusters(points, clusters)
+        update_centroids(clusters)
+        currentCentroids = get_centroids(clusters)
+
+    return clusters    
 
 
-print( (0, 1) in ( (0, 0), (1, 1) ) )
+import matplotlib.colors as mcolors
 
-# cl = Cluster()
-# cl.add_point((1, 0))
+def displayClusters(clusters: List[Cluster]):
+    def displayCluster(cluster: Cluster, colorName: str):
+        xCoords = cluster.get_points_first_coord()
+        yCoords = cluster.get_points_second_coord()
+        plt.scatter(xCoords, yCoords, color=colorName)
+    
+    colors = list(mcolors.CSS4_COLORS.values())
 
-# clusters = [cl]
+    for index, cluster in enumerate(clusters):
+        displayCluster(cluster, colors[index])
 
-# cl.compute_centroid()
-# print(cl.get_centroid())
+    plt.show()
 
-# empty_clusters(clusters)
-# update_centroids(clusters)
 
-# print(cl.get_centroid())
+# def eval_clusters_internal_distance(self, clusters: List[Cluster]) -> float:
+    
 
+
+filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
+clusters = kMeans(8, filePath)
+
+
+displayClusters(clusters)
 
 exit()
 
