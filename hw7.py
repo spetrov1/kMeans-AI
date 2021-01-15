@@ -88,6 +88,13 @@ class Cluster:
 # TODO try to random init points but not from given points
 def random_init_clusters(points: (float, float), numCentroids: int) -> List[Cluster]:
     centroids = random.sample(points, numCentroids) # TODO does this get different points
+    
+    # TODO try to init random points (but with int coordinates)
+    # centroids = []
+    # for _ in range(numCentroids):
+    #     coords = np.random.rand(2)  # get from [0, 1]
+    #     centroids.append( (coords[0], coords[1]) )
+
     clusters = []
 
     for centroid in centroids:
@@ -123,17 +130,18 @@ def get_centroids(clusters: List[Cluster]):
     centroids = [cluster.get_centroid() for cluster in clusters]
     return centroids
 
-def kMeans(k, filePathWithData) -> List[Cluster]:
-
-    def centroid_differs(lastCentroids, currentCentroids):
-        return not (lastCentroids == currentCentroids)
-
+def k_means_given_file(k, filePathWithData) -> List[Cluster]:
     points = extract_points_given_file(filePathWithData)
+    return k_means(k, points)
+
+def k_means(k, points):
     clusters = random_init_clusters(points, k)
     update_centroids(clusters)
 
     lastCentroids = None
     currentCentroids = get_centroids(clusters)
+    def centroid_differs(lastCentroids, currentCentroids):
+        return not (lastCentroids == currentCentroids)
 
     while centroid_differs(lastCentroids, currentCentroids):
         lastCentroids = copy.deepcopy(currentCentroids)
@@ -142,13 +150,11 @@ def kMeans(k, filePathWithData) -> List[Cluster]:
         update_centroids(clusters)
         currentCentroids = get_centroids(clusters)
 
-    return clusters    
-
+    return clusters  
 
 import matplotlib.colors as mcolors
-
 def displayClusters(clusters: List[Cluster]):
-    def displayCluster(cluster: Cluster, colorName: str):
+    def spreadPoints(cluster: Cluster, colorName: str):
         xCoords = cluster.get_points_first_coord()
         yCoords = cluster.get_points_second_coord()
         plt.scatter(xCoords, yCoords, color=colorName)
@@ -156,7 +162,7 @@ def displayClusters(clusters: List[Cluster]):
     colors = list(mcolors.CSS4_COLORS.values())
 
     for index, cluster in enumerate(clusters):
-        displayCluster(cluster, colors[index])
+        spreadPoints(cluster, colors[index])
 
     plt.show()
 
@@ -166,10 +172,10 @@ def displayClusters(clusters: List[Cluster]):
 
 
 filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
-clusters = kMeans(8, filePath)
 
-
-displayClusters(clusters)
+for i in range(3):
+    clusters = k_means_given_file(8, filePath)
+    displayClusters(clusters)
 
 exit()
 
