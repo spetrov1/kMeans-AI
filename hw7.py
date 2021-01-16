@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
 from typing import List
 import re
@@ -39,9 +40,10 @@ def dist(point1: (float, float), point2: (float, float)):
 
 class Cluster:
     
-    def __init__(self):
-        self.points = []
-        self.centroid = None
+    def __init__(self, centroid: (float, float)):
+        # first point in self.points is the init centroid
+        self.points = [centroid]
+        self.centroid = centroid
 
     def compute_centroid(self) -> None:
 
@@ -76,8 +78,10 @@ class Cluster:
         # internalClusterDistance = internalClusterDistance * clusterSize
         return internalClusterDistance
 
+    # remove all points from cluster
+    #  except the first one which is the init centroid
     def empty_cluster(self):
-        self.points = []
+        self.points = self.points[0:1]
 
     def get_points_first_coord(self):
         return [point[0] for point in self.points]
@@ -88,19 +92,17 @@ class Cluster:
 # TODO try to random init points but not from given points
 def random_init_clusters(points: (float, float), numCentroids: int) -> List[Cluster]:
     centroids = random.sample(points, numCentroids) # TODO does this get different points
-    
+    # points = [point for point in points if point not in centroids]
+
     # TODO try to init random points (but with int coordinates)
     # centroids = []
     # for _ in range(numCentroids):
-    #     coords = np.random.rand(2)  # get from [0, 1]
-    #     centroids.append( (coords[0], coords[1]) )
+    #     centroids.append( (random.randint(3, 1009), random.randint(3, 1009)) )
 
     clusters = []
 
     for centroid in centroids:
-        cluster = Cluster()
-        cluster.add_point(centroid)
-
+        cluster = Cluster(centroid)
         clusters.append(cluster)
 
     return clusters
@@ -136,14 +138,14 @@ def k_means_given_file(k, filePathWithData) -> List[Cluster]:
 
 def k_means(k, points):
     clusters = random_init_clusters(points, k)
-    update_centroids(clusters)
+    # update_centroids(clusters)
 
     lastCentroids = None
     currentCentroids = get_centroids(clusters)
-    def centroid_differs(lastCentroids, currentCentroids):
+    def centroids_differs(lastCentroids, currentCentroids):
         return not (lastCentroids == currentCentroids)
 
-    while centroid_differs(lastCentroids, currentCentroids):
+    while centroids_differs(lastCentroids, currentCentroids):
         lastCentroids = copy.deepcopy(currentCentroids)
         empty_clusters(clusters)
         assign_points_to_nearest_clusters(points, clusters)
@@ -166,16 +168,55 @@ def displayClusters(clusters: List[Cluster]):
 
     plt.show()
 
+# evaluate clusters by their internal distance
+# the smaller evaluation means the better solution
+def evaluate(clusters: List[Cluster]) -> float:
+    clustersEvaluation = 0
 
-# def eval_clusters_internal_distance(self, clusters: List[Cluster]) -> float:
+    for cluster in clusters:
+        clustersEvaluation += cluster.compute_internal_cluster_distance()
     
+    return clustersEvaluation
+
+# apply k means algorithm multiple times and get the best solution
+def apply_k_means_multiple_times(k: int, filePathWithData: str, nTimes) -> List[Cluster]:
+    currentBestValue = sys.maxsize
+    currentSolutionClusters = []
+    points = extract_points_given_file(filePath)
+
+    while nTimes > 0:
+        clusters = k_means(k, points)
+        value = evaluate(clusters)
+        if value < currentBestValue:
+            currentBestValue = value
+            currentSolutionClusters = clusters
+        nTimes = nTimes - 1
+    
+    return currentSolutionClusters
+
+
+# get random value from @values
+# values[index] has chance chances[index]
+def get_random_with_chances(values: List, chances: List[float]):
+    allChances = 0
+    for chance in chances:
+        allChances += chance
+    
+    randomChance = allChances * random.random()
+
+    sumChances = 0
+    for index, chance in enumerate(chances):
+        if index < len(chances) and sumChances + chances[index] >= randomChance:
+            return values[index]
+        sumChances += chance
+    return None
 
 
 filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
+numClusters = 8
+clusters = apply_k_means_multiple_times(numClusters, filePath, 5)
+displayClusters(clusters)
 
-for i in range(3):
-    clusters = k_means_given_file(8, filePath)
-    displayClusters(clusters)
 
 exit()
 
