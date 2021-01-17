@@ -107,6 +107,12 @@ def random_init_clusters(points: (float, float), numCentroids: int) -> List[Clus
 
     return clusters
 
+def get_nearest_center(centroids: (float, float), point) -> (float, float):
+    distances = [dist(centroid, point) for centroid in centroids]
+    index = distances.index(min(distances))
+
+    return centroids[index]
+
 def assign_point_to_nearest_cluster(point, clusters: List[Cluster]):
     distances = [dist(point, cluster.get_centroid()) for cluster in clusters]
     clusterIndex = distances.index(min(distances))
@@ -161,7 +167,9 @@ def displayClusters(clusters: List[Cluster]):
         yCoords = cluster.get_points_second_coord()
         plt.scatter(xCoords, yCoords, color=colorName)
     
-    colors = list(mcolors.CSS4_COLORS.values())
+    # colors = list(mcolors.CSS4_COLORS.values())
+    colors = list(mcolors.TABLEAU_COLORS.values())
+    
 
     for index, cluster in enumerate(clusters):
         spreadPoints(cluster, colors[index])
@@ -211,6 +219,41 @@ def get_random_with_chances(values: List, chances: List[float]):
         sumChances += chance
     return None
 
+def k_means_plus_plus_initialization(points, k):
+    # TODO when points is chosen then remove from points
+    centroids = random.sample(points, 1)
+    probabilities = []
+
+    while len(centroids) != k:
+        for point in points:
+            nearestCenter = get_nearest_center(centroids, point)
+            distance = dist(nearestCenter, point)**2
+            probabilities.append(distance)
+        chosenPoint = get_random_with_chances(points, probabilities)
+        centroids.append(chosenPoint)
+        probabilities = []
+    return centroids
+
+
+
+filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
+points = extract_points_given_file(filePath)
+
+for _ in range(10):
+    centroids = k_means_plus_plus_initialization(points, 8)
+    clusters = []
+    for centroid in centroids:
+        clusters.append(Cluster(centroid))
+    displayClusters(clusters)
+
+exit()
+
+
+
+for _ in range(10):
+    random2 = get_random_with_chances([1, 2, 3], [0, 57, 2])
+    print(random2)
+exit()
 
 filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
 numClusters = 8
