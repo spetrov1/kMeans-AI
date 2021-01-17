@@ -144,7 +144,6 @@ def k_means_given_file(k, filePathWithData) -> List[Cluster]:
 
 def k_means(k, points):
     clusters = random_init_clusters(points, k)
-    # update_centroids(clusters)
 
     lastCentroids = None
     currentCentroids = get_centroids(clusters)
@@ -187,7 +186,7 @@ def evaluate(clusters: List[Cluster]) -> float:
     return clustersEvaluation
 
 # apply k means algorithm multiple times and get the best solution
-def apply_k_means_multiple_times(k: int, filePathWithData: str, nTimes) -> List[Cluster]:
+def apply_k_means_multiple_times(k: int, filePathWithData: str, nTimes: int) -> List[Cluster]:
     currentBestValue = sys.maxsize
     currentSolutionClusters = []
     points = extract_points_given_file(filePath)
@@ -232,56 +231,56 @@ def k_means_plus_plus_initialization(points, k):
         chosenPoint = get_random_with_chances(points, probabilities)
         centroids.append(chosenPoint)
         probabilities = []
-    return centroids
 
-
-
-filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
-points = extract_points_given_file(filePath)
-
-for _ in range(10):
-    centroids = k_means_plus_plus_initialization(points, 8)
     clusters = []
     for centroid in centroids:
         clusters.append(Cluster(centroid))
-    displayClusters(clusters)
 
-exit()
+    return clusters
+
+def k_means_plus_plus(k, points):
+    clusters = k_means_plus_plus_initialization(points, k)
+
+    lastCentroids = None
+    currentCentroids = get_centroids(clusters)
+    def centroids_differs(lastCentroids, currentCentroids):
+        return not (lastCentroids == currentCentroids)
+
+    while centroids_differs(lastCentroids, currentCentroids):
+        lastCentroids = copy.deepcopy(currentCentroids)
+        empty_clusters(clusters)
+        assign_points_to_nearest_clusters(points, clusters)
+        update_centroids(clusters)
+        currentCentroids = get_centroids(clusters)
+
+    return clusters  
+
+def apply_k_means_plus_plus_multiple_times(k, points, nTimes):
+    currentBestValue = sys.maxsize
+    currentSolutionClusters = []
+    points = extract_points_given_file(filePath)
+
+    while nTimes > 0:
+        clusters = k_means_plus_plus(k, points)
+        value = evaluate(clusters)
+        if value < currentBestValue:
+            currentBestValue = value
+            currentSolutionClusters = clusters
+        nTimes = nTimes - 1
+    
+    return currentSolutionClusters
 
 
-
-for _ in range(10):
-    random2 = get_random_with_chances([1, 2, 3], [0, 57, 2])
-    print(random2)
-exit()
-
-filePath = 'C:\\Users\\35988\\Desktop\\HW7\\unbalance\\unbalance.txt'
+filePath = 'unbalance\\unbalance.txt'
+points = extract_points_given_file(filePath)
 numClusters = 8
-clusters = apply_k_means_multiple_times(numClusters, filePath, 5)
+
+# testing normal kMeans
+clusters = apply_k_means_multiple_times(numClusters, points, 3)
+displayClusters(clusters)
+
+# testing kMeans++ result
+clusters = apply_k_means_plus_plus_multiple_times(numClusters, points, 3)
 displayClusters(clusters)
 
 
-exit()
-
-
-
-# points = extract_points_given_file('normal/normal.txt')
-# print(points[0])
-
-# # exit()
-
-# # N = 3
-# # x = np.random.rand(N)
-# # y = np.random.rand(N)
-
-# # plt.scatter(x, y, color='black')
-# # plt.show()
-
-# x = [1, 2, 3]
-# y = [1, 2, 3]
-
-# plt.scatter(x, y, color='red')
-
-# plt.scatter([10, 20], [10, 20], color='black')
-
-# plt.show()
